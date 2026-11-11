@@ -55,7 +55,10 @@ const seed = async () => {
 
     await Reading.insertMany(readings);
 
-    console.log(`✅ Seed completed: Created demo user (demo@sweety.com / Demo@123) with ${readings.length} readings`);
+    console.log(`\n✅ Seed completed!`);
+    console.log(`   👤 Demo user: demo@sweety.com / Demo@123`);
+    console.log(`   📊 Total readings inserted: ${readings.length}`);
+    console.log(`   📅 Date range: last 30 days\n`);
     process.exit(0);
   } catch (err) {
     console.error('❌ Seed failed:', err.message);
