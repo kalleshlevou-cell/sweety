@@ -49,7 +49,7 @@ Built with **Node.js + Express**, **MongoDB (Mongoose)**, and **React (Vite)**.
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/your-username/sweety.git
+git clone https://github.com/kalleshlevou-cell/sweety.git
 cd sweety
 ```
 
