@@ -211,25 +211,35 @@ All report endpoints accept `?date=YYYY-MM-DD` query parameter.
 ## 📝 Notes
 
 ### Assumptions
-1. **Time zone**: Dates are stored as midnight UTC for consistent comparisons. The app uses `YYYY-MM-DD` format throughout.
-2. **MongoDB Atlas**: The app connects to MongoDB Atlas by default. A local MongoDB or Docker container can also be used by updating `MONGODB_URL`.
-3. **bcryptjs over bcrypt**: Used `bcryptjs` (pure JavaScript) instead of native `bcrypt` for easier cross-platform compatibility and simpler Docker builds.
-4. **Simple UI**: Focused on clean, functional design over fancy UI. Used custom CSS rather than a component library.
-5. **Token storage**: JWT is stored in `localStorage` for simplicity. In production, `httpOnly` cookies would be more secure.
-6. **Mongoose ODM**: Used Mongoose for schema validation, indexing, and query building.
+
+1. **Date handling — UTC midnight**: All dates are stored as `YYYY-MM-DD T00:00:00.000Z` (midnight UTC). I made this choice so date comparisons never break due to timezone offsets — a reading logged on "15 Oct" in any timezone is always stored and queried as the same UTC day.
+
+2. **One reading per slot enforced at both layers**: Duplicate-slot prevention is validated in the controller (business logic) AND enforced by a compound unique index `{ user, date, time_slot }` in MongoDB. This means even a race condition or direct DB insert can't create duplicates.
+
+3. **bcryptjs instead of native bcrypt**: Chose the pure-JS `bcryptjs` over native `bcrypt` because it installs without build tools on any OS. For a production app the native module would be faster, but for a fresher project cross-platform simplicity matters more.
+
+4. **JWT in localStorage**: Stored the JWT in `localStorage` for simplicity. I'm aware this is vulnerable to XSS attacks. In a production system I would use `httpOnly` cookies so JavaScript can't access the token at all.
+
+5. **No component library**: Used custom CSS throughout. I wanted to show I can write clean CSS without relying on Tailwind or Material UI, and keep the bundle small.
+
+6. **MongoDB instead of PostgreSQL**: The assignment mentioned PostgreSQL but I built this with MongoDB/Mongoose. The data model (users + readings with a date + slot + value) maps naturally to documents, and all the required validation and reporting logic works correctly. If PostgreSQL is strictly required, the controllers and models would need to be rewritten using `pg` or `Sequelize`, but the API shape and frontend would remain the same.
+
+7. **In-memory MongoDB fallback**: If `MONGODB_URL` is set to `memory` or not configured, the app automatically falls back to `mongodb-memory-server` (an embedded MongoDB). This means the app runs out of the box with no external database needed — useful for reviewers who don't want to set up Atlas.
+
+---
 
 ### What I'd improve with more time
-- **httpOnly cookie auth** instead of localStorage JWT
-- **Rate limiting** on auth endpoints to prevent brute force
-- **Integration tests** with a real test database (MongoDB Memory Server)
-- **React Testing Library** tests for frontend components
-- **Redis caching** for report queries
-- **Input sanitization** for XSS prevention
-- **Better error boundaries** in React
-- **Dark mode** toggle
-- **Export readings** as CSV/PDF
-- **Mobile-responsive** refinements
-- **CI/CD** pipeline with GitHub Actions
+
+- **Switch JWT to `httpOnly` cookies** — eliminates the XSS risk of localStorage completely.
+- **Rate limiting on auth endpoints** — prevent brute-force attacks using `express-rate-limit`. Especially important for `/login`.
+- **Integration tests with a real test DB** — current tests mock Mongoose. With more time I'd use `mongodb-memory-server` in tests for true end-to-end coverage without mocking.
+- **React Testing Library** — add form validation tests and report rendering tests on the frontend.
+- **Redis caching for reports** — daily/monthly reports don't change often. Caching them in Redis and invalidating on any reading write would make the reports page instant.
+- **Proper error boundaries in React** — currently an API crash can leave the UI in a broken state. Error boundaries would catch that gracefully.
+- **Export as CSV/PDF** — diabetes patients often need to share reports with their doctor. A download button would make the app genuinely useful.
+- **Pagination on the readings list UI** — the backend already supports `?page=&limit=` but the frontend doesn't have page navigation yet.
+- **CI/CD with GitHub Actions** — auto-run tests on every push, fail the PR if tests break.
+- **Refresh token flow** — the current JWT expires in 7 days with no refresh. A proper refresh token rotation would keep users logged in securely.
 
 ---
 
